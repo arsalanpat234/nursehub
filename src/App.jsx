@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react"
 import { supabase } from "./supabase"
 
-const [jobs, setJobs] = useState([]);
-
-useEffect(() => {
-  fetch('https://jobicy.com/api/v2/remote-jobs?tag=nurse&count=20')
-    .then(res => res.json())
-    .then(data => setJobs(data.jobs || []))
-    .catch(err => console.error(err));
-}, []);
 
 const newsData = [
   { id:1, title:"Global Nursing Shortage Reaches Critical Levels in 2026", date:"June 10, 2026", tag:"Global", color:"#f43f5e", content:"The WHO reports a global shortage of 13 million nurses by 2030, urging countries to fast-track nursing programs." },
