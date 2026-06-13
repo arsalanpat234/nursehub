@@ -54,10 +54,10 @@ const subscriptionPlans = [
 ]
 
 const paymentMethods = [
-  { name:"Easypaisa", icon:"📱", number:"0300-1234567", color:"#34d399" },
-  { name:"JazzCash", icon:"💳", number:"0301-7654321", color:"#fb923c" },
-  { name:"SadaPay", icon:"🟣", number:"sadapay@nursehub.com", color:"#a78bfa" },
-  { name:"Payoneer", icon:"🌐", number:"nursehub@payoneer.com", color:"#38bdf8" },
+  { name:"Easypaisa", icon:"📱", number:"0311-2347693", color:"#34d399" },
+  { name:"JazzCash", icon:"💳", number:"0325-8917948", color:"#fb923c" },
+  { name:"SadaPay", icon:"🟣", number:"0325-8917948", color:"#a78bfa" },
+  { name:"Payoneer", icon:"🌐", number:"arsalanpatrus@gmail.com", color:"#38bdf8" },
 ]
 
 const recruiters = [
