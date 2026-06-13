@@ -610,5 +610,5 @@ const recruiters = [
     </div>
   )
 }
-]
+
             
