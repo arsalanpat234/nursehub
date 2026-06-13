@@ -65,7 +65,8 @@ const recruiters = [
   { id:2, name:"Cait Osborne", company:"Host Healthcare", country:"USA", speciality:"Travel Nursing", email:"cait@hosthealthcare.com", photo:"👩‍💼" },
   { id:3, name:"Ahmed Al-Rashid", company:"Gulf Medical", country:"UAE", speciality:"All Specialities", email:"ahmed@gulfmedical.ae", photo:"👨‍💼" },
   { id:4, name:"Emma Wilson", company:"NHS Recruitment", country:"UK", speciality:"General Nursing", email:"emma@nhs.uk", photo:"👩‍💼" },
-  { id:5, name:"David Chen", company:"Canada Health", country:"Canada", speciality:"Cardiac / ICU", email:"david@canadahealth.ca", photo:"👨‍💼" },
+  { id:5, name:"David Chen", company:"Canada Health", country:"Canada", speciality:"Cardiac / ICU", email:"david@canadahealth.ca", photo:"👨‍💼" },                         
+  ];
   export default function App() {
   const [page, setPage] = useState("home")
   const [userType, setUserType] = useState("nurse")
