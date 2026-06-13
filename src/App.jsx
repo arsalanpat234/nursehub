@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react"
 import { supabase } from "./supabase"
 
-const jobs = [
-  { id:1, title:"ICU Nurse", hospital:"Johns Hopkins Hospital", location:"USA, Baltimore", salary:"$85,000/yr", type:"Full Time", country:"USA", posted:"June 10, 2026" },
-  { id:2, title:"Cardiac Nurse", hospital:"NHS Trust London", location:"UK, London", salary:"£42,000/yr", type:"Full Time", country:"UK", posted:"June 9, 2026" },
-  { id:3, title:"ER Nurse", hospital:"Toronto General", location:"Canada, Toronto", salary:"CA$75,000/yr", type:"Full Time", country:"Canada", posted:"June 8, 2026" },
-  { id:4, title:"Staff Nurse", hospital:"King Faisal Specialist", location:"Saudi Arabia, Riyadh", salary:"SAR 8,000/mo", type:"Full Time", country:"Saudi Arabia", posted:"June 7, 2026" },
-  { id:5, title:"Pediatric Nurse", hospital:"Royal Children's Hospital", location:"Australia, Melbourne", salary:"AU$72,000/yr", type:"Full Time", country:"Australia", posted:"June 6, 2026" },
-  { id:6, title:"ICU Nurse", hospital:"Cleveland Clinic Abu Dhabi", location:"UAE, Abu Dhabi", salary:"AED 12,000/mo", type:"Full Time", country:"UAE", posted:"June 5, 2026" },
-]
+const [jobs, setJobs] = useState([]);
+
+useEffect(() => {
+  fetch('https://jobicy.com/api/v2/remote-jobs?tag=nurse&count=20')
+    .then(res => res.json())
+    .then(data => setJobs(data.jobs || []))
+    .catch(err => console.error(err));
+}, []);
 
 const newsData = [
   { id:1, title:"Global Nursing Shortage Reaches Critical Levels in 2026", date:"June 10, 2026", tag:"Global", color:"#f43f5e", content:"The WHO reports a global shortage of 13 million nurses by 2030, urging countries to fast-track nursing programs." },
