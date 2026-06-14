@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"
 import { supabase } from "./supabase"
 
-
 const newsData = [
   { id:1, title:"Global Nursing Shortage Reaches Critical Levels in 2026", date:"June 10, 2026", tag:"Global", color:"#f43f5e", content:"The WHO reports a global shortage of 13 million nurses by 2030, urging countries to fast-track nursing programs." },
   { id:2, title:"UAE Announces 5,000 New Nursing Positions", date:"June 8, 2026", tag:"UAE", color:"#38bdf8", content:"UAE Ministry of Health opens 5,000 new positions for international nurses with competitive packages." },
@@ -57,9 +56,10 @@ const recruiters = [
   { id:2, name:"Cait Osborne", company:"Host Healthcare", country:"USA", speciality:"Travel Nursing", email:"cait@hosthealthcare.com", photo:"👩‍💼" },
   { id:3, name:"Ahmed Al-Rashid", company:"Gulf Medical", country:"UAE", speciality:"All Specialities", email:"ahmed@gulfmedical.ae", photo:"👨‍💼" },
   { id:4, name:"Emma Wilson", company:"NHS Recruitment", country:"UK", speciality:"General Nursing", email:"emma@nhs.uk", photo:"👩‍💼" },
-  { id:5, name:"David Chen", company:"Canada Health", country:"Canada", speciality:"Cardiac / ICU", email:"david@canadahealth.ca", photo:"👨‍💼" },                         
-  ];
-  export default function App() {
+  { id:5, name:"David Chen", company:"Canada Health", country:"Canada", speciality:"Cardiac / ICU", email:"david@canadahealth.ca", photo:"👨‍💼" },
+]
+
+export default function App() {
   const [page, setPage] = useState("home")
   const [userType, setUserType] = useState("nurse")
   const [country, setCountry] = useState("All")
@@ -144,8 +144,8 @@ const recruiters = [
   }
 
   const goTo = (pg) => { setPage(pg); setError(""); setSuccess("") }
+  const jobs = []
   const filteredJobs = country === "All" ? [...postedJobs, ...jobs] : [...postedJobs, ...jobs].filter(j => j.country === country)
-
   const S = {
     page: { padding:"20px 16px", maxWidth:"900px", margin:"0 auto" },
     card: { background:"#0f172a", border:"1px solid #1e293b", borderRadius:"14px", padding:"16px", marginBottom:"12px" },
@@ -240,8 +240,8 @@ const recruiters = [
           {success && <div style={S.success}>{success}</div>}
         </div>
       )}
-
-      {page==="news" && (
+      
+  {page==="news" && (
         <div style={S.page}>
           <h2 style={S.h2}>📰 Nursing News</h2>
           <div style={{ background:"linear-gradient(135deg,rgba(56,189,248,0.15),rgba(129,140,248,0.15))", border:"1px solid rgba(56,189,248,0.3)", borderRadius:"12px", padding:"14px", marginBottom:"20px", textAlign:"center" }}>
@@ -300,10 +300,12 @@ const recruiters = [
             </div>
           ))}
         </div>
-      )}{page==="recruiters" && (
+      )}
+
+      {page==="recruiters" && (
         <div style={S.page}>
-          <h2 style={S.h2}>👥 International Recruiters</h2>
-          {user && (
+          <h2 style={S.h2}>👥 Recruiters & Agencies</h2>
+          {user && user.user_metadata?.user_type==="recruiter" && (
             <div style={{ marginBottom:"20px" }}>
               <button onClick={() => setShowJobForm(!showJobForm)} style={{ ...S.btn, width:"100%" }}>
                 {showJobForm ? "✕ Cancel" : "➕ Post a Job"}
@@ -353,7 +355,6 @@ const recruiters = [
           </div>
         </div>
       )}
-
       {page==="help" && (
         <div style={{ ...S.page, maxWidth:"700px" }}>
           <h2 style={S.h2}>❓ Help Center</h2>
@@ -602,5 +603,6 @@ const recruiters = [
     </div>
   )
 }
+                            
 
-            
+      
