@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+ import { useState, useEffect } from "react"
 import { supabase } from "./supabase"
 
 const newsData = [
@@ -75,10 +75,14 @@ export default function App() {
   const [selectedPlan, setSelectedPlan] = useState(null)
   const [selectedPayment, setSelectedPayment] = useState(null)
   const [postedJobs, setPostedJobs] = useState([])
+  const [jobicyJobs, setJobicyJobs] = useState([])
+  const [jobicyLoading, setJobicyLoading] = useState(false)
   const [jobForm, setJobForm] = useState({ title:"", hospital:"", location:"", salary:"", type:"Full Time", country:"UAE", description:"" })
   const [showJobForm, setShowJobForm] = useState(false)
   const [uploadedDocs, setUploadedDocs] = useState([])
   const [uploadMsg, setUploadMsg] = useState("")
+  const [nurseProfile, setNurseProfile] = useState({ specialty:"", experience:"", ielts:"", oet:"", nclex:"", location:"", bio:"" })
+  const [profileSaved, setProfileSaved] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -88,6 +92,20 @@ export default function App() {
       setUser(session?.user ?? null)
       if (session?.user) setPage("dashboard")
     })
+  }, [])
+
+  useEffect(() => {
+    setJobicyLoading(true)
+    fetch("https://jobicy.com/api/v2/remote-jobs?count=20&tag=nurse")
+      .then(res => res.json())
+      .then(data => {
+        setJobicyJobs(data.jobs || [])
+        setJobicyLoading(false)
+      })
+      .catch(() => {
+        setJobicyJobs([])
+        setJobicyLoading(false)
+      })
   }, [])
 
   const handleRegister = async () => {
@@ -143,9 +161,33 @@ export default function App() {
     setTimeout(() => setUploadMsg(""), 3000)
   }
 
+  const handleSaveProfile = async () => {
+    if (!user) return
+    setLoading(true)
+    const { error } = await supabase.from("nurse_profiles").upsert({
+      user_id: user.id,
+      email: user.email,
+      name: user.user_metadata?.name || "",
+      specialty: nurseProfile.specialty,
+      experience: nurseProfile.experience,
+      ielts: nurseProfile.ielts,
+      oet: nurseProfile.oet,
+      nclex: nurseProfile.nclex,
+      location: nurseProfile.location,
+      bio: nurseProfile.bio,
+      verified: false,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" })
+    if (error) setError("Profile save failed: " + error.message)
+    else { setProfileSaved(true); setSuccess("✅ Profile saved!"); setTimeout(() => setSuccess(""), 3000) }
+    setLoading(false)
+  }
+
   const goTo = (pg) => { setPage(pg); setError(""); setSuccess("") }
-  const jobs = []
-  const filteredJobs = country === "All" ? [...postedJobs, ...jobs] : [...postedJobs, ...jobs].filter(j => j.country === country)
+  const filteredJobs = country === "All"
+    ? [...postedJobs, ...jobicyJobs]
+    : [...postedJobs, ...jobicyJobs].filter(j => (j.country || j.jobGeo || "").includes(country))
+
   const S = {
     page: { padding:"20px 16px", maxWidth:"900px", margin:"0 auto" },
     card: { background:"#0f172a", border:"1px solid #1e293b", borderRadius:"14px", padding:"16px", marginBottom:"12px" },
@@ -219,29 +261,39 @@ export default function App() {
               <button key={c} onClick={() => setCountry(c)} style={{ padding:"6px 12px", borderRadius:"20px", border:"1px solid", borderColor:country===c?"#38bdf8":"#1e293b", background:country===c?"rgba(56,189,248,0.1)":"#0f172a", color:country===c?"#38bdf8":"#64748b", cursor:"pointer", fontSize:"0.78rem", fontWeight:country===c?700:400 }}>{c}</button>
             ))}
           </div>
+          {jobicyLoading && (
+            <div style={{ textAlign:"center", color:"#38bdf8", padding:"20px", fontSize:"0.85rem" }}>
+              ⏳ Loading live jobs...
+            </div>
+          )}
+          {!jobicyLoading && filteredJobs.length === 0 && (
+            <div style={{ textAlign:"center", color:"#64748b", padding:"30px", fontSize:"0.85rem" }}>
+              No jobs found for this filter.
+            </div>
+          )}
           {filteredJobs.map((j,i) => (
             <div key={j.id||i} style={{ ...S.card, borderLeft:"3px solid #38bdf8" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                 <div style={{ flex:1 }}>
-                  <h3 style={{ margin:"0 0 4px", fontSize:"0.95rem" }}>{j.title}</h3>
-                  <p style={{ color:"#64748b", margin:"0 0 4px", fontSize:"0.82rem" }}>🏥 {j.hospital}</p>
-                  <p style={{ color:"#64748b", margin:"0 0 4px", fontSize:"0.78rem" }}>📍 {j.location}</p>
-                  <p style={{ color:"#475569", margin:0, fontSize:"0.72rem" }}>📅 {j.posted}</p>
+                  <h3 style={{ margin:"0 0 4px", fontSize:"0.95rem" }}>{j.title || j.jobTitle}</h3>
+                  <p style={{ color:"#64748b", margin:"0 0 4px", fontSize:"0.82rem" }}>🏥 {j.hospital || j.companyName}</p>
+                  <p style={{ color:"#64748b", margin:"0 0 4px", fontSize:"0.78rem" }}>📍 {j.location || j.jobGeo}</p>
+                  <p style={{ color:"#475569", margin:0, fontSize:"0.72rem" }}>📅 {j.posted || j.pubDate}</p>
                 </div>
                 <div style={{ textAlign:"right", marginLeft:"12px" }}>
-                  <div style={{ color:"#34d399", fontWeight:700, fontSize:"0.85rem" }}>{j.salary}</div>
-                  <div style={{ color:"#64748b", fontSize:"0.72rem", marginTop:"4px" }}>{j.type}</div>
+                  <div style={{ color:"#34d399", fontWeight:700, fontSize:"0.85rem" }}>{j.salary || (j.annualSalaryMin ? `$${j.annualSalaryMin}+` : "Competitive")}</div>
+                  <div style={{ color:"#64748b", fontSize:"0.72rem", marginTop:"4px" }}>{j.type || j.jobType}</div>
                 </div>
               </div>
-              {j.description && <p style={{ color:"#94a3b8", fontSize:"0.78rem", marginTop:"8px", marginBottom:0 }}>{j.description}</p>}
-              <button onClick={() => user ? setSuccess("Application sent! Recruiter will contact you.") : goTo("login")} style={{ marginTop:"10px", background:"linear-gradient(135deg,#38bdf8,#818cf8)", border:"none", color:"white", padding:"7px 16px", borderRadius:"8px", cursor:"pointer", fontSize:"0.82rem", fontWeight:600 }}>Apply Now</button>
+              {(j.description || j.jobExcerpt) && <p style={{ color:"#94a3b8", fontSize:"0.78rem", marginTop:"8px", marginBottom:0 }}>{(j.description || j.jobExcerpt || "").substring(0,120)}...</p>}
+              <a href={j.url || "#"} target="_blank" rel="noreferrer" style={{ display:"inline-block", marginTop:"10px", background:"linear-gradient(135deg,#38bdf8,#818cf8)", color:"white", padding:"7px 16px", borderRadius:"8px", fontSize:"0.82rem", fontWeight:600, textDecoration:"none" }}>Apply Now →</a>
             </div>
           ))}
           {success && <div style={S.success}>{success}</div>}
         </div>
       )}
-      
-  {page==="news" && (
+
+      {page==="news" && (
         <div style={S.page}>
           <h2 style={S.h2}>📰 Nursing News</h2>
           <div style={{ background:"linear-gradient(135deg,rgba(56,189,248,0.15),rgba(129,140,248,0.15))", border:"1px solid rgba(56,189,248,0.3)", borderRadius:"12px", padding:"14px", marginBottom:"20px", textAlign:"center" }}>
@@ -355,6 +407,7 @@ export default function App() {
           </div>
         </div>
       )}
+
       {page==="help" && (
         <div style={{ ...S.page, maxWidth:"700px" }}>
           <h2 style={S.h2}>❓ Help Center</h2>
@@ -460,12 +513,31 @@ export default function App() {
                   </div>
                 ))}
               </div>
-              <div style={{ background:"#060d1a", borderRadius:"10px", padding:"12px" }}>
-                <p style={{ margin:"0 0 8px", fontWeight:700, fontSize:"0.85rem", color:"#94a3b8" }}>📋 Recent Registrations</p>
-                {["👩‍⚕️ Nurse — Karachi, Pakistan","👩‍⚕️ Nurse — Lahore, Pakistan","👩‍⚕️ Nurse — Dubai, UAE","🏢 Recruiter — USA","👩‍⚕️ Nurse — Islamabad, Pakistan"].map((u,i) => (
-                  <div key={i} style={{ padding:"8px 0", borderBottom:"1px solid #1e293b", fontSize:"0.78rem", color:"#64748b" }}>{u}</div>
-                ))}
-              </div>
+            </div>
+          )}
+          {user.user_metadata?.user_type==="nurse" && (
+            <div style={{ ...S.card, border:"1px solid #34d399", marginBottom:"16px" }}>
+              <h3 style={{ margin:"0 0 12px", color:"#34d399" }}>👤 My Nurse Profile</h3>
+              {success && <div style={S.success}>{success}</div>}
+              {error && <div style={S.error}>{error}</div>}
+              <select value={nurseProfile.specialty} onChange={e => setNurseProfile({...nurseProfile,specialty:e.target.value})} style={S.select}>
+                <option value="">Select Specialty</option>
+                {["ICU","ER / Emergency","Cardiac","NICU","OT / Surgery","General Ward","Pediatrics","Oncology","Dialysis","Community"].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <input placeholder="Years of Experience (e.g. 5)" value={nurseProfile.experience} onChange={e => setNurseProfile({...nurseProfile,experience:e.target.value})} style={S.input} />
+              <input placeholder="IELTS Score (e.g. 7.0)" value={nurseProfile.ielts} onChange={e => setNurseProfile({...nurseProfile,ielts:e.target.value})} style={S.input} />
+              <input placeholder="OET Score (e.g. B)" value={nurseProfile.oet} onChange={e => setNurseProfile({...nurseProfile,oet:e.target.value})} style={S.input} />
+              <select value={nurseProfile.nclex} onChange={e => setNurseProfile({...nurseProfile,nclex:e.target.value})} style={S.select}>
+                <option value="">NCLEX Status</option>
+                <option value="Not Started">Not Started</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Passed">Passed ✅</option>
+              </select>
+              <input placeholder="Current Location (e.g. Karachi, Pakistan)" value={nurseProfile.location} onChange={e => setNurseProfile({...nurseProfile,location:e.target.value})} style={S.input} />
+              <textarea placeholder="Short Bio (optional)" value={nurseProfile.bio} onChange={e => setNurseProfile({...nurseProfile,bio:e.target.value})} style={{ ...S.input, height:"70px", resize:"vertical" }} />
+              <button onClick={handleSaveProfile} disabled={loading} style={{ ...S.btn, width:"100%", opacity:loading?0.7:1 }}>
+                {loading ? "Saving..." : profileSaved ? "✅ Profile Saved!" : "💾 Save Profile"}
+              </button>
             </div>
           )}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px", marginBottom:"16px" }}>
@@ -538,8 +610,7 @@ export default function App() {
             {!resetSent ? (
               <>
                 {error && <p style={S.error}>{error}</p>}
-                <input placeholder="Your email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} style={S.input} />
-                <button onClick={handleForgotPassword} disabled={loading} style={{ ...S.btn, width:"100%", opacity:loading?0.7:1 }}>{loading?"Sending...":"Send Reset Link"}</button>
+                <input placeholder="Your email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} style={S.input} />   <button onClick={handleForgotPassword} disabled={loading} style={{ ...S.btn, width:"100%", opacity:loading?0.7:1 }}>{loading?"Sending...":"Send Reset Link"}</button>
               </>
             ) : (
               <div>
@@ -603,6 +674,4 @@ export default function App() {
     </div>
   )
 }
-                            
-
-      
+                    
